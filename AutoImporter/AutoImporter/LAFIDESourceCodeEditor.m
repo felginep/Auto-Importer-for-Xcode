@@ -12,8 +12,6 @@
 #import "NSTextView+Operations.h"
 #import "NSString+Extensions.h"
 
-NSString * const LAFAddImportOperationImportRegexPattern = @"^#.*(import|include).*[\",<].*[\",>]";
-
 @interface LAFIDESourceCodeEditor()
 
 @property (nonatomic, strong) NSMutableSet *importedCache;
@@ -35,7 +33,7 @@ NSString * const LAFAddImportOperationImportRegexPattern = @"^#.*(import|include
     
     DVTSourceTextStorage *textStorage = [self currentTextStorage];
     [textStorage.string enumerateLinesUsingBlock:^(NSString *line, BOOL *stop) {
-        if ([self isImportString:line]) {
+        if (line.ad_isImport) {
             [_importedCache addObject:[line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
         }
     }];
@@ -130,14 +128,27 @@ NSString * const LAFAddImportOperationImportRegexPattern = @"^#.*(import|include
     __block NSUInteger lineNumber = NSNotFound;
     __block NSUInteger currentLineNumber = 0;
     __block BOOL foundDuplicate = NO;
+    __block NSUInteger numberOfImportsFounds = 0;
     [source.string enumerateLinesUsingBlock:^(NSString *line, BOOL *stop) {
-        if ([self isImportString:line]) {
+        if (line.ad_isImport) {
             if ([line isEqual:statement]) {
                 foundDuplicate = YES;
                 *stop = YES;
                 return;
             }
+            BOOL shouldStop = (statement.ad_isCategoryImport && line.ad_isExternalImport) || (statement.ad_isImport && (line.ad_isExternalImport || line.ad_isCategoryImport));
+            BOOL shouldCheckOrder = (statement.ad_isCategoryImport && line.ad_isCategoryImport) || (statement.ad_isImport && line.ad_isImport);
+            if (shouldCheckOrder) {
+                if (numberOfImportsFounds > 0 && [line compare:statement] == NSOrderedDescending) {
+                    *stop = YES;
+                    return;
+                }
+            } else if (shouldStop) {
+                *stop = YES;
+                return;
+            }
             lineNumber = currentLineNumber;
+            numberOfImportsFounds++;
         }
         currentLineNumber++;
     }];
@@ -162,23 +173,6 @@ NSString * const LAFAddImportOperationImportRegexPattern = @"^#.*(import|include
     }
     
     return lineNumber;
-}
-
-- (NSRegularExpression *)importRegex {
-    static NSRegularExpression *_regex = nil;
-    if (!_regex) {
-        NSError *error = nil;
-        _regex = [[NSRegularExpression alloc] initWithPattern:LAFAddImportOperationImportRegexPattern
-                                                      options:0
-                                                        error:&error];
-    }
-    return _regex;
-}
-
-- (BOOL)isImportString:(NSString *)string {
-    NSRegularExpression *regex = [self importRegex];
-    NSInteger numberOfMatches = [regex numberOfMatchesInString:string options:0 range:NSMakeRange(0, string.length)];
-    return numberOfMatches > 0;
 }
 
 @end

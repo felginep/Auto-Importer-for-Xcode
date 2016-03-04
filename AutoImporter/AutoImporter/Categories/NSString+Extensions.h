@@ -13,4 +13,7 @@
 - (NSString *)mh_stringByRemovingWhitespacesAndNewlines;
 - (BOOL)mh_isAlphaNumeric;
 - (BOOL)mh_isWhitespaceOrNewline;
+- (BOOL)ad_isImport;
+- (BOOL)ad_isCategoryImport;
+- (BOOL)ad_isExternalImport;
 @end

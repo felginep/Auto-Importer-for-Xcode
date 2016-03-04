@@ -29,4 +29,31 @@
 	return string.length == 0;
 }
 
+NSString * const LAFAddImportOperationImportRegexPattern = @"^#.*(import|include).*[\",<].*[\",>]";
+
+- (NSRegularExpression *)importRegex {
+    static NSRegularExpression *_regex = nil;
+    if (!_regex) {
+        NSError *error = nil;
+        _regex = [[NSRegularExpression alloc] initWithPattern:LAFAddImportOperationImportRegexPattern
+                                                      options:0
+                                                        error:&error];
+    }
+    return _regex;
+}
+
+- (BOOL)ad_isImport {
+    NSRegularExpression * regex = [self importRegex];
+    NSInteger numberOfMatches = [regex numberOfMatchesInString:self options:0 range:NSMakeRange(0, self.length)];
+    return numberOfMatches > 0;
+}
+
+- (BOOL)ad_isExternalImport {
+    return [self ad_isImport] && [self containsString:@"<"] && [self containsString:@">"];
+}
+
+- (BOOL)ad_isCategoryImport {
+    return [self ad_isImport] && [self containsString:@"+"] && ![self ad_isExternalImport];
+}
+
 @end
