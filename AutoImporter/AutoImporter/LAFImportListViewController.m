@@ -145,7 +145,16 @@
     if ([[view.searchField stringValue] length] == 0) {
         _filtered = _items;
     } else {
-        _filtered = [_items filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF.description CONTAINS[cd] %@", [view.searchField stringValue]]];
+        NSMutableString * format = [[NSMutableString alloc] init];
+        NSString * textFieldText = [view.searchField stringValue];
+        for (NSUInteger index = 0; index < textFieldText.length; index++) {
+            if (index == 0) {
+                [format appendString:@".*"];
+            }
+            NSString * character = [textFieldText substringWithRange:NSMakeRange(index, 1)];
+            [format appendString:[NSString stringWithFormat:@"%@.*", character]];
+        }
+        _filtered = [_items filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF.description MATCHES[cd] %@", format]];
     }
     
     [view.tableView reloadData];
