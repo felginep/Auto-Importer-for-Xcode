@@ -155,6 +155,43 @@
             [format appendString:[NSString stringWithFormat:@"%@.*", character]];
         }
         _filtered = [_items filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF.description MATCHES[cd] %@", format]];
+        NSSortDescriptor * sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"typeString" ascending:YES comparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
+            NSString * string1 = obj1;
+            NSString * string2 = obj2;
+            if ([string1 isEqualToString:@"C"]) {
+                if ([string2 isEqualToString:@"C"]) {
+                    return NSOrderedSame;
+                } else {
+                    return NSOrderedAscending;
+                }
+            }
+            if ([string1 isEqualToString:@"P"]) {
+                if ([string2 isEqualToString:@"C"]) {
+                    return NSOrderedDescending;
+                } else if ([string2 isEqualToString:@"P"]) {
+                    return NSOrderedSame;
+                } else {
+                    return NSOrderedAscending;
+                }
+            }
+            if ([string1 isEqualToString:@"H"]) {
+                if ([string2 isEqualToString:@"P"] || [string2 isEqualToString:@"C"]) {
+                    return NSOrderedDescending;
+                } else if ([string2 isEqualToString:@"H"]) {
+                    return NSOrderedSame;
+                } else {
+                    return NSOrderedAscending;
+                }
+            }
+
+            if ([string2 isEqualToString:@"C"] || [string2 isEqualToString:@"P"] || [string2 isEqualToString:@"H"]) {
+                return NSOrderedDescending;
+            } else  {
+                return NSOrderedSame;
+            }
+        }];
+        NSSortDescriptor * alphabeticalOrder = [NSSortDescriptor sortDescriptorWithKey:@"description" ascending:YES];
+        _filtered = [_filtered sortedArrayUsingDescriptors:@[sortDescriptor, alphabeticalOrder]];
     }
     
     [view.tableView reloadData];
